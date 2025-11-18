@@ -141,3 +141,4 @@ vite.config.ts.timestamp-*
 
 setup.md
 .DS_Store
+deploy.sh
