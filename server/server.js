@@ -12,7 +12,6 @@ if (process.env.NODE_ENV === 'production') {
   // Default to development or a generic .env file
   dotenv.config({ path: '.env.development' });
 }
-console.log(process.env);
 const PORT = process.env.PORT || 3000;
 
 // --- DATABASE CONNECTION ---
