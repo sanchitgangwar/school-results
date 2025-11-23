@@ -1,0 +1,363 @@
+import { useState, useEffect } from 'react';
+import { 
+  Printer, Globe, School, User, FileText, Phone, Mail, 
+  ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus 
+} from 'lucide-react';
+import telanganaLogo from '../../assets/Telangana-LOGO.png';
+
+// --- HELPER COMPONENT: PERFORMANCE BADGE ---
+// This makes the average marks easy to understand using colors and icons
+const PerformanceBadge = ({ studentMarks, classAvg, t }) => {
+  if (classAvg === null || classAvg === undefined) return null;
+
+  const diff = studentMarks - classAvg;
+  const isHigh = diff > 0;
+  const isEqual = diff === 0;
+
+  // Green for above average, Orange for below (avoiding Red to be less harsh), Gray for equal
+  const colorClass = isHigh 
+    ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
+    : isEqual 
+      ? 'text-gray-600 bg-gray-50 border-gray-200' 
+      : 'text-orange-700 bg-orange-50 border-orange-200';
+
+  const Icon = isHigh ? TrendingUp : isEqual ? Minus : TrendingDown;
+
+  return (
+    <div className={`mt-2 inline-flex flex-col items-center p-1.5 rounded border ${colorClass} text-xs w-full max-w-[140px]`}>
+      <div className="flex items-center gap-1 font-bold">
+        <Icon className="h-3 w-3" />
+        <span>{isHigh ? t('Above Avg', 'సగటు పైన') : isEqual ? t('Average', 'సగటు') : t('Below Avg', 'సగటు తక్కువ')}</span>
+      </div>
+      <div className="text-[10px] opacity-80 mt-0.5">
+        {t('Class Avg', 'తరగతి సగటు')}: {classAvg}
+      </div>
+    </div>
+  );
+};
+
+// --- HELPER COMPONENT: SINGLE EXAM SECTION ---
+const ExamSection = ({ result, isDefaultOpen, t }) => {
+  const [isOpen, setIsOpen] = useState(isDefaultOpen);
+
+  // Calculate totals for this specific exam
+  const totalMarks = result.subjects.reduce((acc, curr) => acc + curr.marks, 0);
+  const totalMax = result.subjects.reduce((acc, curr) => acc + curr.max, 0);
+  const percentage = totalMax > 0 ? ((totalMarks / totalMax) * 100).toFixed(1) : "0.0";
+
+  return (
+    <div className="mb-6 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm print:border-2 print:border-black print:shadow-none break-inside-avoid">
+      {/* Header / Clickable Toggle */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex flex-col md:flex-row md:items-center justify-between p-5 transition-colors text-left
+          ${isOpen ? 'bg-blue-50 text-blue-900' : 'bg-white hover:bg-gray-50 text-gray-700'}`}
+      >
+        <div className="flex items-center gap-3 mb-2 md:mb-0">
+           {isOpen ? <ChevronUp className="h-5 w-5 text-blue-600" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
+           <div>
+             <h3 className="font-bold text-lg">{t(result.exam_name, result.exam_name_telugu)}</h3>
+             <span className="text-xs opacity-70">{t('Date', 'తేదీ')}: {result.exam_date}</span>
+           </div>
+        </div>
+        
+        {/* Summary Badge (Visible even when collapsed) */}
+        <div className="flex items-center gap-4 pl-8 md:pl-0">
+           <div className="text-right">
+             <p className="text-xs uppercase tracking-wider opacity-60">{t('Percentage', 'శాతం')}</p>
+             <p className="font-bold text-xl">{percentage}%</p>
+           </div>
+        </div>
+      </button>
+
+      {/* Collapsible Content */}
+      {isOpen && (
+        <div className="border-t border-gray-200">
+           <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-bold tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4 border-b border-gray-200 border-r">{t('Subject', 'విషయం')}</th>
+                    <th className="px-6 py-4 border-b border-gray-200 border-r text-center hidden sm:table-cell">{t('Max Marks', 'గరిష్ట మార్కులు')}</th>
+                    <th className="px-6 py-4 border-b border-gray-200 border-r text-center">{t('Marks Obtained', 'పొందిన మార్కులు')}</th>
+                    <th className="px-6 py-4 border-b border-gray-200 text-center">{t('Grade', 'గ్రేడ్')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {result.subjects.map((sub, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                      {/* Subject Name */}
+                      <td className="px-6 py-4 font-medium text-gray-800 border-r border-gray-100 align-top">
+                        <div className="text-base">{t(sub.name, sub.name_telugu)}</div>
+                        {/* Mobile View Max Marks Hint */}
+                        <div className="sm:hidden text-xs text-gray-400 mt-1">
+                          Max: {sub.max}
+                        </div>
+                      </td>
+
+                      {/* Max Marks (Hidden on mobile to save space) */}
+                      <td className="px-6 py-4 text-center text-gray-500 border-r border-gray-100 align-top hidden sm:table-cell">
+                        {sub.max}
+                      </td>
+
+                      {/* Marks Obtained + Comparison Badge */}
+                      <td className="px-6 py-4 text-center border-r border-gray-100 align-top">
+                        <div className="flex flex-col items-center">
+                          <span className="font-bold text-blue-700 text-lg block">
+                            {sub.marks}
+                          </span>
+                          {/* The New Visual Comparison Component */}
+                          <PerformanceBadge 
+                            studentMarks={sub.marks} 
+                            classAvg={sub.class_avg} 
+                            t={t} 
+                          />
+                        </div>
+                      </td>
+
+                      {/* Grade */}
+                      <td className="px-6 py-4 text-center align-top">
+                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold
+                          ${sub.grade.startsWith('A') ? 'bg-green-100 text-green-700' : 
+                            sub.grade.startsWith('B') ? 'bg-blue-100 text-blue-700' : 
+                            'bg-yellow-100 text-yellow-700'}`}>
+                          {sub.grade}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {/* Total Row */}
+                  <tr className="bg-blue-50/30 border-t-2 border-gray-100">
+                    <td className="px-6 py-4 font-bold text-gray-900 border-r border-gray-100">{t('Total', 'మొత్తం')}</td>
+                    <td className="px-6 py-4 text-center border-r border-gray-100 text-gray-500 hidden sm:table-cell">{totalMax}</td>
+                    <td className="px-6 py-4 text-center text-lg font-bold text-blue-700 border-r border-gray-100">
+                      {totalMarks}
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-700">
+                       {percentage}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- MAIN COMPONENT ---
+
+const App = () => {
+  // State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
+  const [language, setLanguage] = useState('en');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // 1. Get token from URL (assumes URL is http://domain.com/results/:token)
+        const pathSegments = window.location.pathname.split('/');
+        const token = pathSegments[pathSegments.length - 1]; 
+        
+        // 2. Call your new Node API
+        const apiUrl = import.meta.env.VITE_API_URL;
+        const response = await fetch(`${apiUrl}/api/public/student/${token}`);
+        
+        if (!response.ok) {
+          throw new Error('Invalid Token or Student Not Found');
+        }
+        
+        const result = await response.json();
+        setData(result);
+        setLoading(false);
+      } catch (err) {
+        setError("Unable to load results. Please check the link.");
+        console.log(err);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Helper to get text based on language
+  const t = (en, te) => {
+    return (language === 'te' && te) ? te : en;
+  };
+
+  // Loading State
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center p-8 bg-white rounded-lg shadow-sm border-l-4 border-red-500">
+          <h3 className="text-xl font-bold text-red-600 mb-2">Error</h3>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const { student, results } = data;
+
+
+  return (
+    // FORCE LIGHT THEME
+    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans print:bg-white">
+      
+      {/* --- NAVBAR --- */}
+      <nav className="bg-blue-700 text-white shadow-sm print:hidden">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <img src={telanganaLogo} className="h-16 w-auto" />
+            <div className="flex flex-col">
+              <span className="font-bold text-lg leading-tight">District Schools</span>
+              <span className="text-xs text-blue-200">Govt of Telangana</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => window.print()}
+              className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-sm transition" 
+            >
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">Print</span>
+            </button>
+            <button 
+              onClick={() => setLanguage(l => l === 'en' ? 'te' : 'en')}
+              className="flex items-center space-x-1 bg-white text-blue-700 px-3 py-1.5 rounded-sm font-medium hover:bg-blue-50 transition" 
+            >
+              <Globe className="h-4 w-4" />
+              <span>{language === 'en' ? 'తెలుగు' : 'English'}</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* --- MAIN CONTENT --- */}
+      <main className="max-w-4xl mx-auto p-4 sm:p-8 print:p-0">
+        
+        {/* REPORT CARD CONTAINER */}
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 print:shadow-none print:border-2 print:border-black print:rounded-none">
+          
+          {/* HEADER SECTION */}
+          <div className="bg-blue-50 p-6 border-b border-blue-100 print:bg-white print:border-b-2 print:border-black">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-blue-900 print:text-black uppercase tracking-wide">
+                  {t(student.school.name, student.school.name_telugu)}
+                </h1>
+                <p className="text-blue-700 print:text-gray-700 font-medium mt-1">
+                  {t(student.school.address, student.school.address_telugu)}
+                </p>
+                <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-sm print:border print:border-gray-300">
+                    UDISE: {student.school.udise_code}
+                  </span>
+                  <span>{t('District', 'జిల్లా')}: {t(student.school.district, student.school.district)}</span>
+                </div>
+              </div>
+              <div className="text-right hidden md:block print:block">
+                 <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto ml-auto mb-2 print:border print:border-gray-300">
+                   <School className="h-8 w-8 text-blue-600 print:text-black" />
+                 </div>
+                 <p className="text-xs text-gray-500 uppercase tracking-widest">Official Report</p>
+              </div>
+            </div>
+          </div>
+
+          {/* STUDENT DETAILS GRID */}
+          <div className="p-6 print:p-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+              <User className="h-5 w-5 text-blue-600" />
+              {t('Student Details', 'విద్యార్థి వివరాలు')}
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
+              <div className="grid grid-cols-3 items-center">
+                <span className="text-gray-500 font-medium col-span-1">{t('Student Name', 'విద్యార్థి పేరు')}:</span>
+                <span className="font-bold text-gray-900 col-span-2 text-lg">
+                  {t(student.name, student.name_telugu)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 items-center">
+                <span className="text-gray-500 font-medium col-span-1">{t('PEN Number', 'PEN సంఖ్య')}:</span>
+                <span className="font-mono font-bold text-gray-900 col-span-2 bg-gray-50 p-1 rounded-sm inline-block w-max print:bg-transparent print:p-0">
+                  {student.pen_number}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 items-center">
+                <span className="text-gray-500 font-medium col-span-1">{t('Class', 'తరగతి')}:</span>
+                <span className="font-semibold text-gray-900 col-span-2">{student.class_name}</span>
+              </div>
+
+              <div className="grid grid-cols-3 items-center">
+                <span className="text-gray-500 font-medium col-span-1">{t('Parent Phone', 'తల్లిదండ్రుల ఫోన్')}:</span>
+                <span className="font-mono text-gray-900 col-span-2">{student.parent_phone}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* EXAM RESULTS SECTION (ITERATED) */}
+          <div className="p-6 pt-2 print:p-4">
+              <div className="flex justify-between items-end mb-4">
+               <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                 <FileText className="h-5 w-5 text-blue-600" />
+                 {t('Exam Results', 'పరీక్ష ఫలితాలు')}
+               </h2>
+              </div>
+              
+              {/* Map through results */}
+              <div>
+                 {results.map((result, idx) => (
+                   <ExamSection 
+                     key={idx} 
+                     result={result} 
+                     isDefaultOpen={idx === 0} // Expand only the first one
+                     t={t}
+                   />
+                 ))}
+              </div>
+          </div>
+
+          {/* FOOTER */}
+          <div className="bg-gray-50 p-6 border-t border-gray-200 text-center print:bg-white print:mt-8 print:border-t-0">
+            <p className="text-sm text-gray-500 print:text-black">
+              {t('This is a computer generated document.', 'ఇది కంప్యూటర్ ద్వారా రూపొందించబడిన పత్రం.')}
+            </p>
+            <div className="mt-4 flex justify-center gap-6 text-xs text-gray-400 print:hidden">
+              <div className="flex items-center gap-1">
+                <Phone className="h-3 w-3" /> Support: 1800-123-456
+              </div>
+              <div className="flex items-center gap-1">
+                <Mail className="h-3 w-3" /> help@district-schools.in
+              </div>
+            </div>
+            {/* Print Signature Line */}
+            <div className="hidden print:flex justify-between mt-16 px-8">
+               <div className="border-t border-black w-40 text-center text-sm pt-2">Principal Signature</div>
+               <div className="border-t border-black w-40 text-center text-sm pt-2">Class Teacher Signature</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default App;
