@@ -7,6 +7,7 @@ const AddSchoolForm = ({ user }) => {
     name_telugu: '',
     udise_code: '', 
     address: '', 
+    address_telugu: '',
     district_id: user.district_id || '', 
     mandal_id: user.mandal_id || '' 
   });
@@ -57,7 +58,7 @@ const AddSchoolForm = ({ user }) => {
       if(!res.ok) throw new Error("Failed to create school");
       
       setMsg('School and classes added successfully!'); 
-      setFormData({ ...formData, name: '', udise_code: '', address: '' });
+      setFormData({ ...formData, name: '', name_telugu: '', udise_code: '', address: '', address_telugu: '' });
       setSelectedGrades([]);
     } catch (err) { 
       setMsg('Error adding school'); 
