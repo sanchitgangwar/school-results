@@ -296,7 +296,7 @@ app.get('/api/entities/:type', authenticateToken, async (req, res) => {
   }
 
   if (q_school_id) {
-    if (['classes'].includes(type)) {
+    if (['classes', 'students'].includes(type)) {
       query += `AND school_id = $${idx++}`;
       params.push(q_school_id);
     }

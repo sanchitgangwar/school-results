@@ -42,7 +42,7 @@ const MarksEntryGrid = ({ user }) => {
     if (context.school_id) {
       const h = { 'Authorization': `Bearer ${token}` };
       fetch(`${import.meta.env.VITE_API_URL}/api/entities/classes?school_id=${context.school_id}`, { headers: h }).then(res => res.json()).then(data => setLists(p => ({ ...p, classes: Array.isArray(data) ? data : [] })));
-      fetch(`${import.meta.env.VITE_API_URL}/api/entities/exams?school_id=${context.school_id}`, { headers: h }).then(res => res.json()).then(data => setLists(p => ({ ...p, exams: Array.isArray(data) ? data : [] })));
+      fetch(`${import.meta.env.VITE_API_URL}/api/entities/exams`, { headers: h }).then(res => res.json()).then(data => setLists(p => ({ ...p, exams: Array.isArray(data) ? data : [] })));
       fetch(`${import.meta.env.VITE_API_URL}/api/entities/subjects`, { headers: h }).then(res => res.json()).then(data => setLists(p => ({ ...p, subjects: Array.isArray(data) ? data : [] })));
     }
   }, [context.school_id]);
@@ -54,7 +54,7 @@ const MarksEntryGrid = ({ user }) => {
 
     try {
       // 1. Fetch Students
-      const studRes = await fetch(`${import.meta.env.VITE_API_URL}/api/entities/students?class_id=${context.class_id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const studRes = await fetch(`${import.meta.env.VITE_API_URL}/api/entities/students?class_id=${context.class_id}&school_id=${context.school_id}`, { headers: { 'Authorization': `Bearer ${token}` } });
       const students = await studRes.json();
 
       // 2. Fetch Existing Marks
@@ -138,7 +138,7 @@ const MarksEntryGrid = ({ user }) => {
                        <tr key={row.student_id} className="hover:bg-blue-50 transition-colors">
                           <td className="px-6 py-3 font-mono text-gray-500">{row.pen}</td>
                           <td className="px-6 py-3 font-medium text-gray-900">{row.name}</td>
-                          <td className="px-6 py-3 text-center"><input type="number" min="0" max="100" className="w-20 p-2 border border-gray-300 rounded text-center font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" value={row.marks_obtained} onChange={(e) => setStudentsGrid(prev => prev.map(r => r.student_id === row.student_id ? { ...r, marks_obtained: e.target.value } : r))} placeholder="-" tabIndex={idx + 1} /></td>
+                          <td className="px-6 py-3 text-center"><input type="number" min="0" max="100" className="w-20 p-2 border border-gray-300 rounded text-center font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" value={Number(row.marks_obtained)} onChange={(e) => setStudentsGrid(prev => prev.map(r => r.student_id === row.student_id ? { ...r, marks_obtained: e.target.value } : r))} placeholder="-" tabIndex={idx + 1} /></td>
                        </tr>
                      ))}
                   </tbody>
