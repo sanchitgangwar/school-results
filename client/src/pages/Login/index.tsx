@@ -22,17 +22,16 @@ const LoginPage = ({ onLogin }) => {
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || 'Login failed');
+      if (!response.ok) {
+        setError(data.error);
+        throw new Error(data.error || 'Login failed.');
+      }
 
       // Success: Pass token and user data up to App
       onLogin(data.token, data.user);
     } catch (err) {
-      // FALLBACK FOR DEMO: Allow admin/admin if backend is unreachable
-      if (username === 'admin' && password === 'admin') {
-         onLogin("demo-token", { name: "Demo Admin", role: "admin" });
-      } else {
-         setError(err.message);
-      }
+        setError('Login failed.');
+        console.log(err.message);
     } finally {
       setLoading(false);
     }
