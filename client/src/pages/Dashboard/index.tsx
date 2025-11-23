@@ -55,7 +55,7 @@ const Dashboard = ({ user, onLogout }) => {
       case 'add_district': return <AddDistrictForm />;
       case 'add_mandal': return <AddMandalForm user={user} />;
       case 'add_school': return <AddSchoolForm user={user} />;
-      case 'add_test': return <AddTestForm user={user} />;
+      case 'add_test': return <AddTestForm />;
       case 'add_student': return <AddStudentForm user={user} />;
       case 'add_marks': return <MarksEntryGrid user={user} />;
       case 'bulk_upload_marks': return <BulkUploadMarks user={user} />

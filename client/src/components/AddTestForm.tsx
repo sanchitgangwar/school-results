@@ -4,9 +4,10 @@ import { FileText } from 'lucide-react';
 // ==========================================
 // 1. ADD TEST FORM (Updated Layout & Logic)
 // ==========================================
-const AddTestForm = ({ user }) => {
+const AddTestForm = () => {
   const [formData, setFormData] = useState({ 
     name: '', 
+    name_telugu: '',
     exam_code: '', 
     start_date: '', 
     end_date: ''
@@ -34,9 +35,10 @@ const AddTestForm = ({ user }) => {
       if (!res.ok) throw new Error("Failed to create exam");
 
       setMsg(`Successfully created Global Exam: ${formData.name}`);
-      setFormData({ name: '', exam_code: '', start_date: '', end_date: '' });
+      setFormData({ name: '', name_telugu: '', exam_code: '', start_date: '', end_date: '' });
     } catch (err) { 
       setMsg("Error submitting exam."); 
+      console.error(err);
     } finally { 
       setIsSubmitting(false); 
     }
