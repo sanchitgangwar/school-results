@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, Download, Upload } from 'lucide-react';
+import { FileSpreadsheet, Download, Upload, Loader } from 'lucide-react';
 
 // ==========================================
 // 1. BULK UPLOAD COMPONENT (Updated with Subject)
@@ -112,7 +112,7 @@ const BulkUploadMarks = ({ user }) => {
     
     reader.onload = async (e) => {
       const text = e.target.result;
-      const rows = text.split("\n").map(row => {
+      const rows = String(text).split("\n").map(row => {
         const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
         return matches ? matches.map(m => m.replace(/^"|"$/g, '').trim()) : [];
       });

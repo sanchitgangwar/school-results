@@ -52,7 +52,7 @@ const Dashboard = ({ user, onLogout }) => {
   const renderContent = () => {
     switch(activeTab) {
       case 'users': return <ManageUsers currentUser={user} />;
-      case 'add_district': return <AddDistrictForm user={user} />;
+      case 'add_district': return <AddDistrictForm />;
       case 'add_mandal': return <AddMandalForm user={user} />;
       case 'add_school': return <AddSchoolForm user={user} />;
       case 'add_test': return <AddTestForm user={user} />;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Map } from 'lucide-react';
 
-const AddDistrictForm = ({ user }) => {
+const AddDistrictForm = () => {
   const [name, setName] = useState('');
   const [msg, setMsg] = useState('');
 
@@ -16,7 +16,7 @@ const AddDistrictForm = ({ user }) => {
       });
       if(!res.ok) throw new Error("Failed");
       setMsg('District added successfully!'); setName('');
-    } catch (err) { setMsg('Error adding district'); }
+    } catch (err) { setMsg('Error adding district'); console.error(err); }
   };
 
   return (

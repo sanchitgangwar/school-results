@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { QrCode, Printer } from 'lucide-react';
 
 // ==========================================
@@ -18,7 +17,6 @@ const GenerateQRSelector = ({ user }) => {
     class_id: 'all' // Default to 'all'
   });
 
-  const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
 
   // 1. Fetch Districts
