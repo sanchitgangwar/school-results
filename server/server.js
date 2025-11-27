@@ -179,41 +179,29 @@ app.post('/api/admin/create-user', authenticateToken, verifyJurisdiction, async 
   }
 });
 
-// Custom School Create Route with Classes
+// --- SCHOOL ROUTES (UPDATED) ---
 app.post('/api/schools/create', authenticateToken, verifyJurisdiction, async (req, res) => {
-  const { name, udise_code, address, district_id, mandal_id, grades } = req.body;
+  // CHANGED: Added name_telugu and address_telugu
+  const { name, name_telugu, udise_code, address, address_telugu, district_id, mandal_id } = req.body;
   const client = await pool.connect();
-  
   try {
     await client.query('BEGIN');
     
-    // 1. Insert School
+    // CHANGED: Updated SQL to insert Telugu fields
     const schoolQuery = `
-      INSERT INTO schools (name, udise_code, address, district_id, mandal_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO schools (name, name_telugu, udise_code, address, address_telugu, district_id, mandal_id) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7) 
       RETURNING id
     `;
-    const schoolRes = await client.query(schoolQuery, [name, udise_code, address, district_id, mandal_id]);
+    const schoolRes = await client.query(schoolQuery, [name, name_telugu, udise_code, address, address_telugu, district_id, mandal_id]);
     const schoolId = schoolRes.rows[0].id;
 
-    // 2. Insert Classes
-    if (grades && Array.isArray(grades) && grades.length > 0) {
-      for (const grade of grades) {
-        await client.query(
-          `INSERT INTO classes (school_id, grade_level) VALUES ($1, $2)`,
-          [schoolId, parseInt(grade)]
-        );
-      }
-    }
-
     await client.query('COMMIT');
-    res.json({ message: "School and classes created successfully", school_id: schoolId });
+    res.json({ message: "School created successfully", school_id: schoolId });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
+  } finally { client.release(); }
 });
 
 // 3. GENERIC ENTITY ADD
@@ -243,71 +231,46 @@ app.post('/api/entities/:type/add', authenticateToken, verifyJurisdiction, async
 app.get('/api/entities/:type', authenticateToken, async (req, res) => {
   const { type } = req.params;
   const { role, district_id, mandal_id, school_id } = req.user;
+  const { district_id: q_d, mandal_id: q_m, school_id: q_s } = req.query; 
   
-  // Extract query params for dropdown filtering
-  const { district_id: q_district_id, mandal_id: q_mandal_id, school_id: q_school_id } = req.query;
-  
+  // HIGHLIGHT: Auto-seed Global Classes if empty
+  if (type === 'classes') {
+    const check = await pool.query('SELECT count(*) FROM classes');
+    if (parseInt(check.rows[0].count) === 0) {
+      console.log("Seeding Global Classes...");
+      for (let i = 6; i <= 10; i++) {
+        await pool.query('INSERT INTO classes (grade_level) VALUES ($1)', [i]);
+      }
+    }
+  }
+
   let query = `SELECT * FROM ${type} WHERE 1=1`;
   let params = [];
   let idx = 1;
 
-  // --- SECURITY SCOPE (Enforced by Token) ---
-  if (role !== 'admin') {
-      if (['mandals', 'schools'].includes(type) && district_id) {
-          query += ` AND district_id = $${idx++}`;
-          params.push(district_id);
-      }
-      if (['schools'].includes(type) && mandal_id) {
-         query += ` AND mandal_id = $${idx++}`;
-         params.push(mandal_id);
-      }
-      if (type === 'students') {
-          if (school_id) {
-              query += ` AND school_id = $${idx++}`;
-              params.push(school_id);
-          } else if (mandal_id) {
-              query = `SELECT s.* FROM students s 
-                       JOIN schools sch ON s.school_id = sch.id 
-                       WHERE sch.mandal_id = $${idx++}`;
-              params.push(mandal_id);
-          }
-      }
+  // HIGHLIGHT: Exclude 'classes' from Role-Based Filtering
+  if (['exams', 'classes'].includes(type)) {
+     // Global entities: Everyone sees all Grades and all Exams
+  } else if (role !== 'admin') {
+      if (['mandals', 'schools'].includes(type) && district_id) { query += ` AND district_id = $${idx++}`; params.push(district_id); }
+      if (['schools', 'students'].includes(type) && mandal_id) { query += ` AND mandal_id = $${idx++}`; params.push(mandal_id); }
+      if (['students'].includes(type) && school_id) { query += ` AND school_id = $${idx++}`; params.push(school_id); }
   }
 
-  // --- DROPDOWN FILTERING (User Selection) ---
-  // Only apply if the parameter is provided in URL (e.g., ?district_id=XYZ)
-  // This allows an Admin to select a district and see only its mandals
+  // HIGHLIGHT: Exclude 'classes' from Dropdown Filtering
+  if (q_d && ['mandals', 'schools'].includes(type)) { query += ` AND district_id = $${idx++}`; params.push(q_d); }
+  if (q_m && ['schools'].includes(type)) { query += ` AND mandal_id = $${idx++}`; params.push(q_m); }
+  if (q_s && ['students'].includes(type)) { query += ` AND school_id = $${idx++}`; params.push(q_s); }
   
-  // 1. Filter Mandals/Schools by District ID
-  if (q_district_id) {
-    // Only if table has this column
-    if (['mandals', 'schools'].includes(type)) {
-       query += ` AND district_id = $${idx++}`;
-       params.push(q_district_id);
-    }
-  }
+  // Note: We intentionally removed the check that filtered classes by school_id
 
-  // 2. Filter Schools by Mandal ID
-  if (q_mandal_id) {
-    if (['schools'].includes(type)) {
-       query += ` AND mandal_id = $${idx++}`;
-       params.push(q_mandal_id);
-    }
-  }
-
-  if (q_school_id) {
-    if (['classes', 'students'].includes(type)) {
-      query += ` AND school_id = $${idx++}`;
-      params.push(q_school_id);
-    }
-  }
+  // Optional: Order classes numerically
+  if (type === 'classes') query += ` ORDER BY grade_level ASC`;
 
   try {
     const result = await pool.query(query, params);
     res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // GET /api/public/student/:token
