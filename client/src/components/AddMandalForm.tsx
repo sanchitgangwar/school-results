@@ -9,14 +9,14 @@ const AddMandalForm = ({ user }) => {
 
   // Always fetch districts. Backend filters the list if user is DEO.
   useEffect(() => {
-    fetch(`${import.meta.env.API_URL}/api/entities/districts`, { headers: { 'Authorization': `Bearer ${token}` } })
+    fetch(`${import.meta.env.VITE_API_URL}/api/entities/districts`, { headers: { 'Authorization': `Bearer ${token}` } })
       .then(res => res.json()).then(setDistricts);
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${import.meta.env.API_URL}/api/entities/mandals/add`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/entities/mandals/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(formData)
