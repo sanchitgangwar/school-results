@@ -429,7 +429,7 @@ app.get('/api/entities/:type', authenticateToken, async (req, res) => {
     // Global entities: Everyone sees all Grades and all Exams
   } else if (role !== 'admin') {
     if (['mandals', 'schools'].includes(type) && district_id) { query += ` AND district_id = $${idx++}`; params.push(district_id); }
-    if (['schools', 'students'].includes(type) && mandal_id) { query += ` AND mandal_id = $${idx++}`; params.push(mandal_id); }
+    if (['schools'].includes(type) && mandal_id) { query += ` AND mandal_id = $${idx++}`; params.push(mandal_id); }
     if (['students'].includes(type) && school_id) { query += ` AND school_id = $${idx++}`; params.push(school_id); }
   }
 
