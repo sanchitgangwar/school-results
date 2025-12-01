@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-import LoginPage from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import PublicReportCard from './pages/PublicReportCard';
-import QRCodePrintView from './pages/QRCodePrintView';
+// Code-splitting: Load pages dynamically
+const LoginPage = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const PublicReportCard = lazy(() => import('./pages/PublicReportCard'));
+const QRCodePrintView = lazy(() => import('./pages/QRCodePrintView'));
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -32,26 +33,35 @@ const App = () => {
 
   return (
     <Router>
-      <Routes>
-        {/* Public Route: Student Result Link */}
-        <Route path="/student/:token" element={<PublicReportCard />} />
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }>
+        <Routes>
+          {/* Public Route: Student Result Link */}
+          <Route path="/student/:token" element={<PublicReportCard />} />
 
-        {/* Auth Route: Login */}
-        <Route path="/login" element={
-          user ? <Navigate to="/dashboard" replace /> : <LoginPage onLogin={handleLogin} />
-        } />
+          {/* Auth Route: Login */}
+          <Route path="/login" element={
+            user ? <Navigate to="/dashboard" replace /> : <LoginPage onLogin={handleLogin} />
+          } />
 
-        {/* Protected Route: Dashboard */}
-        <Route path="/dashboard" element={
-          user ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />
-        } />
+          {/* Protected Route: Dashboard */}
+          <Route path="/dashboard" element={
+            user ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />
+          } />
 
-        {/* Protected Route: QR Code Print */}
-        <Route path="/print-qrs/:schoolId" element={<QRCodePrintView />} />
+          {/* Protected Route: QR Code Print */}
+          <Route path="/print-qrs/:schoolId" element={<QRCodePrintView />} />
 
-        {/* Default Redirect */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-      </Routes>
+          {/* Default Redirect */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 };
