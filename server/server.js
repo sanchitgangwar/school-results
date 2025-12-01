@@ -839,24 +839,8 @@ app.get('/api/analytics/stats', authenticateToken, async (req, res) => {
     `;
     // Note: if exam_id is passed, it will count 1 (if exists). If not, it counts all distinct exams in scope.
 
-    // Run queries in parallel
-    // For examsQuery, we might need to push exam_id to params if it exists
-    const examParams = [...params];
-    if (exam_id) examParams.push(exam_id);
-
-    const [schoolsRes, studentsRes, examsRes] = await Promise.all([
-      pool.query(studentsQuery.replace('SELECT COUNT(DISTINCT s.id)', 'SELECT COUNT(DISTINCT sch.id)').replace('FROM students s', 'FROM schools sch').replace('JOIN schools sch ON s.school_id = sch.id', ''), params), // Simplified schools query
-      pool.query(studentsQuery, params),
-      pool.query(examsQuery, examParams)
-    ]);
-
-    // Wait, the simplified schools query above is risky if I just string replace. 
-    // Let's write explicit queries.
-
-    const q1 = `SELECT COUNT(DISTINCT id) as count FROM schools sch WHERE 1=1 ${d_id ? `AND district_id = $1` : ''} ${m_id ? `AND mandal_id = $${d_id ? 2 : 1}` : ''} ${s_id ? `AND id = $${(d_id ? 1 : 0) + (m_id ? 1 : 0) + 1}` : ''}`;
-    // Actually, let's reuse the logic properly.
-
     // Re-doing query construction for clarity and correctness
+
 
     // 1. Schools Count
     let s_where = 'WHERE 1=1';
@@ -1125,20 +1109,26 @@ app.get('/api/analytics/entity-performance', authenticateToken, async (req, res)
     }
 
     let groupByCol = '';
+    let idCol = '';
     if (level === 'root') {
       groupByCol = 'd.name';
+      idCol = 'd.id';
     } else if (level === 'district') {
       groupByCol = 'mdl.name';
+      idCol = 'mdl.id';
     } else if (level === 'mandal') {
       groupByCol = 'sch.name';
+      idCol = 'sch.id';
     } else if (level === 'school') {
       groupByCol = 's.name';
+      idCol = 's.id';
     } else {
       return res.json([]);
     }
 
     const query = `
             SELECT 
+                ${idCol} as id,
                 ${groupByCol} as name,
                 COUNT(CASE WHEN m.grade = 'A' THEN 1 END) as grade_a,
                 COUNT(CASE WHEN m.grade = 'B' THEN 1 END) as grade_b,
@@ -1151,7 +1141,7 @@ app.get('/api/analytics/entity-performance', authenticateToken, async (req, res)
             JOIN mandals mdl ON sch.mandal_id = mdl.id
             JOIN districts d ON sch.district_id = d.id
             ${whereClause}
-            GROUP BY ${groupByCol}
+            GROUP BY ${idCol}, ${groupByCol}
             ORDER BY ${groupByCol}
         `;
 
@@ -1160,6 +1150,7 @@ app.get('/api/analytics/entity-performance', authenticateToken, async (req, res)
     const result = rows.map(row => {
       const total = parseInt(row.total);
       return {
+        id: row.id,
         name: row.name,
         grade_a: parseInt(row.grade_a),
         grade_b: parseInt(row.grade_b),

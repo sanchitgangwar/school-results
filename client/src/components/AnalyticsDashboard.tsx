@@ -465,6 +465,7 @@ const AnalyticsDashboard: React.FC<DashboardProps> = ({ user }) => {
                                                 data={entityChartData}
                                                 xKey="name"
                                                 minimal={true}
+                                                onBarClick={handleDrillDown}
                                             />
                                         </div>
                                     )}

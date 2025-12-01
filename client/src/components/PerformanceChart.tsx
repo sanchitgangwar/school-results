@@ -28,9 +28,10 @@ interface PerformanceChartProps {
     xKey?: string;
     tickFormatter?: (value: string) => string;
     minimal?: boolean;
+    onBarClick?: (item: any) => void;
 }
 
-const PerformanceChart: React.FC<PerformanceChartProps> = ({ data = [], xKey = 'subject', tickFormatter, minimal = false }) => {
+const PerformanceChart: React.FC<PerformanceChartProps> = ({ data = [], xKey = 'subject', tickFormatter, minimal = false, onBarClick }) => {
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
@@ -73,8 +74,13 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ data = [], xKey = '
 
     const safeData = Array.isArray(data) ? data : [];
     const sortedData = [...safeData].sort((a, b) => b.grade_d_pct - a.grade_d_pct);
-
     const chartHeight = Math.max(384, sortedData.length * 40);
+
+    const handleBarClick = (data: any) => {
+        if (onBarClick && data) {
+            onBarClick(data);
+        }
+    };
 
     return (
         <div className={`w-full ${minimal ? '' : 'bg-white p-4 rounded-lg shadow border border-gray-200'}`} style={{ height: chartHeight }}>
@@ -104,10 +110,47 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ data = [], xKey = '
                     <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ top: 0, fontSize: '12px' }} />
 
                     {/* Stacked Bars for Grades */}
-                    <Bar dataKey="grade_d_pct" name="D (0-35%)" stackId="a" fill="#B8193C" barSize={20} isAnimationActive={false} />
-                    <Bar dataKey="grade_c_pct" name="C (35-60%)" stackId="a" fill="#E8793D" barSize={20} isAnimationActive={false} />
-                    <Bar dataKey="grade_b_pct" name="B (60-80%)" stackId="a" fill="#FFC44A" barSize={20} isAnimationActive={false} />
-                    <Bar dataKey="grade_a_pct" name="A (80-100%)" stackId="a" fill="#3cb819" barSize={20} radius={[0, 4, 4, 0]} isAnimationActive={false} />
+                    <Bar
+                        dataKey="grade_d_pct"
+                        name="D (0-35%)"
+                        stackId="a"
+                        fill="#B8193C"
+                        barSize={20}
+                        isAnimationActive={false}
+                        onClick={handleBarClick}
+                        cursor="pointer"
+                    />
+                    <Bar
+                        dataKey="grade_c_pct"
+                        name="C (35-60%)"
+                        stackId="a"
+                        fill="#E8793D"
+                        barSize={20}
+                        isAnimationActive={false}
+                        onClick={handleBarClick}
+                        cursor="pointer"
+                    />
+                    <Bar
+                        dataKey="grade_b_pct"
+                        name="B (60-80%)"
+                        stackId="a"
+                        fill="#FFC44A"
+                        barSize={20}
+                        isAnimationActive={false}
+                        onClick={handleBarClick}
+                        cursor="pointer"
+                    />
+                    <Bar
+                        dataKey="grade_a_pct"
+                        name="A (80-100%)"
+                        stackId="a"
+                        fill="#3cb819"
+                        barSize={20}
+                        radius={[0, 4, 4, 0]}
+                        isAnimationActive={false}
+                        onClick={handleBarClick}
+                        cursor="pointer"
+                    />
                 </BarChart>
             </ResponsiveContainer>
         </div>
